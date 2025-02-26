@@ -1,83 +1,80 @@
 import streamlit as st
-import time
-import numpy as np
-import matplotlib.pyplot as plt
+import math
 
-def calculate_bmi(weight, height):
-    return weight / (height ** 2)
-
-def bmi_category(bmi):
-    if bmi < 18.5:
-        return "Underweight 😔 Eat nutritious foods! 🍎🥦"
-    elif 18.5 <= bmi < 24.9:
-        return "Normal weight ✅ Great job! Keep staying healthy! 💪✨"
-    elif 25 <= bmi < 29.9:
-        return "Overweight ⚠️ Time to stay active! 🏃‍♂️🥗"
-    else:
-        return "Obese ❗ Consider a healthier lifestyle. 🏋️‍♀️🍏"
-
-st.set_page_config(page_title="BMI Calculator", page_icon="⚖️", layout="centered")
-
+# Dark Theme Styling
 st.markdown(
     """
     <style>
         body {
-            background: linear-gradient(to right, #ff9966, #ff5e62);
-            font-family: 'Poppins', sans-serif;
-            color: #333;
+            background-color: #000000;
+            color: #ffffff;
         }
         .stApp {
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0px 10px 25px rgba(0,0,0,0.3);
-            text-align: center;
+            background-color: #000000;
         }
-        .result-box {
-            padding: 25px;
-            background: #fff;
-            border-radius: 15px;
-            box-shadow: 0px 5px 20px rgba(0,0,0,0.2);
-            margin-top: 25px;
-            animation: fadeIn 1s ease-in-out;
+        h1, h2, h3, h4, h5, h6 {
+            color: #00ffcc !important;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-15px); }
-            to { opacity: 1; transform: translateY(0); }
+        div.stNumberInput>label, div.stSelectbox>label {
+            color: #ffffff !important;
         }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-st.markdown("<h1 style='text-align: center; color: #333;'>✨ Ultimate BMI Calculator ⚖️ ✨</h1>", unsafe_allow_html=True)
+# Conversion Factors Dictionary
+conversion_factors = {
+    "Length": {
+        "Meter": 1.0, "Kilometer": 1000.0, "Centimeter": 0.01, "Millimeter": 0.001,
+        "Mile": 1609.34, "Yard": 0.9144, "Foot": 0.3048, "Inch": 0.0254
+    },
+    "Mass": {
+        "Kilogram": 1.0, "Gram": 0.001, "Milligram": 0.000001,
+        "Pound": 0.453592, "Ounce": 0.0283495
+    },
+    "Temperature": {
+        "Celsius": {"to_base": lambda x: x, "from_base": lambda x: x},
+        "Fahrenheit": {"to_base": lambda x: (x - 32) * 5/9, "from_base": lambda x: (x * 9/5) + 32},
+        "Kelvin": {"to_base": lambda x: x - 273.15, "from_base": lambda x: x + 273.15}
+    },
+    "Time": {
+        "Second": 1.0, "Minute": 60.0, "Hour": 3600.0, "Day": 86400.0
+    }
+}
 
-weight = st.number_input("⚖️ Enter your weight (kg):", min_value=1.0, step=0.1, value=50.0)
-height = st.number_input("📏 Enter your height (m):", min_value=0.1, step=0.01, value=1.6)
-
-if st.button("🔥 Calculate My BMI Now! 🔥"):
-    if weight > 0 and height > 0:
-        with st.spinner("🔄 Analyzing your health stats... Please wait! 🧮"):
-            time.sleep(1)
-        bmi = calculate_bmi(weight, height)
-        category = bmi_category(bmi)
-        
-        st.markdown(f"""
-            <div class='result-box'>
-                <h2 style='color: #ff5e62;'>📊 Your BMI: <strong>{bmi:.2f}</strong></h2>
-                <h3 style='color: #007bff;'>🏆 Category: <strong>{category}</strong></h3>
-                <p style='font-size: 16px; color: #555;'>💡 Maintain a balanced diet and an active lifestyle for optimal health! 🌿💖</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.progress(min(bmi / 40, 1.0))
-        
-        fig, ax = plt.subplots()
-        x = np.linspace(10, 40, 300)
-        y = np.sin((x - bmi) * np.pi / 30) * 10 + 20
-        ax.plot(x, y, label="BMI Trend", color="red")
-        ax.axvline(bmi, color='blue', linestyle='--', label=f'Your BMI: {bmi:.2f}')
-        ax.legend()
-        st.pyplot(fig)
+# Unit Conversion Function
+def convert_units(value, from_unit, to_unit, category):
+    factors = conversion_factors.get(category, {})
+    if category == "Temperature":
+        base_value = factors[from_unit]["to_base"](value)
+        return factors[to_unit]["from_base"](base_value)
     else:
-        st.error("🚨 Oops! Please enter a valid weight and height to proceed. 🚨")
+        return (value * factors[from_unit]) / factors[to_unit]
+
+# Streamlit UI
+st.title("🔥 Advanced Unit Converter")
+
+# Conversion Type Selection
+conversion_type = st.selectbox("Select Category", list(conversion_factors.keys()))
+
+col1, col2, col3 = st.columns([2, 1, 2])
+
+with col1:
+    from_unit = st.selectbox("From Unit", list(conversion_factors[conversion_type].keys()))
+
+with col2:
+    st.markdown("<h2 style='text-align: center; color: #00ffcc;'>⇆</h2>", unsafe_allow_html=True)
+
+with col3:
+    to_unit = st.selectbox("To Unit", list(conversion_factors[conversion_type].keys()))
+
+# Input Value
+value1 = st.number_input("Enter Value", value=1.0, step=0.1, format="%f")
+
+# Perform Conversion
+try:
+    value2 = convert_units(value1, from_unit, to_unit, conversion_type)
+    st.markdown(f"<h2 style='text-align: center; color: #00ffcc;'>Result: {value2:.4f}</h2>", unsafe_allow_html=True)
+except Exception as e:
+    st.markdown(f"<h2 style='text-align: center; color: red;'>Error: {str(e)}</h2>", unsafe_allow_html=True)
