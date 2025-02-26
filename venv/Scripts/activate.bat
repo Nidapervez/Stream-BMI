@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Burhan\Desktop\stream\venv
+set VIRTUAL_ENV=C:\Users\Burhan\Desktop\Streamlit-main\Streamlit-main\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
